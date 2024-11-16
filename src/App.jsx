@@ -344,7 +344,12 @@ function App() {
                   : 'text-secondary-600 hover:text-secondary-900'
               }`}
             >
-              Editor
+              <span className="flex items-center">
+                <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                Write
+              </span>
             </button>
             <button
               onClick={() => setActiveTab('preview')}
@@ -354,10 +359,17 @@ function App() {
                   : 'text-secondary-600 hover:text-secondary-900'
               }`}
             >
-              Preview
+              <span className="flex items-center">
+                <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+                View
+              </span>
             </button>
           </div>
 
+          {/* Content Grid */}
           <div className="grid lg:grid-cols-2 gap-3 md:gap-4 flex-1">
             {/* Editor Panel */}
             <div className={`bg-white rounded-lg shadow-md overflow-hidden flex flex-col min-h-[250px] lg:min-h-[450px]
@@ -367,18 +379,20 @@ function App() {
                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                   </svg>
-                  Editor
+                  Markdown Editor
                 </h2>
-                <textarea
-                  value={text}
-                  onChange={(e) => setText(e.target.value)}
-                  placeholder="# Start writing your markdown here..."
-                  className="flex-1 w-full p-2 md:p-3 bg-secondary-50/50 border border-secondary-200 rounded-md
-                           font-mono text-sm md:text-base resize-none leading-relaxed
-                           focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent
-                           transition-colors duration-200
-                           placeholder:text-secondary-400"
-                />
+                <div className="flex-1 relative">
+                  <textarea
+                    value={text}
+                    onChange={(e) => setText(e.target.value)}
+                    placeholder="# Start writing your markdown here..."
+                    className="absolute inset-0 w-full h-full p-2 md:p-3 bg-secondary-50/50 border border-secondary-200 rounded-md
+                             font-mono text-sm md:text-base resize-none leading-relaxed
+                             focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent
+                             transition-colors duration-200
+                             placeholder:text-secondary-400"
+                  />
+                </div>
               </div>
             </div>
 
@@ -393,56 +407,60 @@ function App() {
                   </svg>
                   Preview
                 </h2>
-                <div className="flex-1 overflow-auto bg-secondary-50/50 rounded-md border border-secondary-200 p-2 md:p-3">
-                  {preview ? (
-                    <div 
-                      className="prose prose-sm md:prose max-w-none h-full
-                               prose-headings:text-secondary-900 prose-headings:mb-2
-                               prose-p:text-secondary-700 prose-p:leading-relaxed prose-p:mb-2
-                               prose-a:text-[#646cff] prose-a:no-underline hover:prose-a:text-[#535bf2]
-                               prose-blockquote:text-secondary-600 prose-blockquote:border-secondary-300
-                               prose-code:text-secondary-800 prose-code:bg-secondary-100 
-                               prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-sm
-                               prose-pre:bg-secondary-100 prose-pre:text-secondary-900 prose-pre:shadow-sm
-                               prose-ol:text-secondary-700 prose-ul:text-secondary-700
-                               prose-strong:text-secondary-900 prose-em:text-secondary-800"
-                      dangerouslySetInnerHTML={{ __html: preview }}
-                    />
-                  ) : (
-                    <div className="text-secondary-400 italic flex items-center justify-center h-full text-sm">
-                      Start typing to see the preview...
-                    </div>
-                  )}
+                <div className="flex-1 relative">
+                  <div className="absolute inset-0 overflow-auto bg-secondary-50/50 rounded-md border border-secondary-200 p-2 md:p-3">
+                    {preview ? (
+                      <div 
+                        className="prose prose-sm md:prose max-w-none pb-16
+                                 prose-headings:text-secondary-900 prose-headings:mb-2
+                                 prose-p:text-secondary-700 prose-p:leading-relaxed prose-p:mb-2
+                                 prose-a:text-[#646cff] prose-a:no-underline hover:prose-a:text-[#535bf2]
+                                 prose-blockquote:text-secondary-600 prose-blockquote:border-secondary-300
+                                 prose-code:text-secondary-800 prose-code:bg-secondary-100 
+                                 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-sm
+                                 prose-pre:bg-secondary-100 prose-pre:text-secondary-900 prose-pre:shadow-sm
+                                 prose-ol:text-secondary-700 prose-ul:text-secondary-700
+                                 prose-strong:text-secondary-900 prose-em:text-secondary-800"
+                        dangerouslySetInnerHTML={{ __html: preview }}
+                      />
+                    ) : (
+                      <div className="text-secondary-400 italic flex items-center justify-center h-full text-sm">
+                        Start typing to see the preview...
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Download Button */}
-          <div className="flex justify-center mt-2">
-            <button
-              onClick={handleDownload}
-              disabled={isGenerating}
-              className="px-6 py-2.5 bg-[#1a1a1a] text-white text-sm md:text-base font-medium rounded-md
-                       border border-transparent hover:border-[#646cff]
-                       transition-all duration-200 cursor-pointer shadow-sm
-                       focus:outline-none focus:ring-2 focus:ring-[#646cff] focus:ring-offset-2
-                       disabled:opacity-50 disabled:cursor-not-allowed
-                       dark:bg-[#f9f9f9] dark:text-[#213547]
-                       w-full md:w-auto max-w-[250px]"
-            >
-              {isGenerating ? (
-                <span className="flex items-center justify-center">
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Generating...
-                </span>
-              ) : (
-                'Download PDF'
-              )}
-            </button>
+          {/* Download Button - Sticky Footer */}
+          <div className="sticky bottom-0 left-0 right-0 py-2 bg-gradient-to-t from-white via-white to-transparent">
+            <div className="flex justify-center">
+              <button
+                onClick={handleDownload}
+                disabled={isGenerating}
+                className="px-6 py-2.5 bg-[#1a1a1a] text-white text-sm md:text-base font-medium rounded-md
+                         border border-transparent hover:border-[#646cff]
+                         transition-all duration-200 cursor-pointer shadow-md
+                         focus:outline-none focus:ring-2 focus:ring-[#646cff] focus:ring-offset-2
+                         disabled:opacity-50 disabled:cursor-not-allowed
+                         dark:bg-[#f9f9f9] dark:text-[#213547]
+                         w-[200px] md:w-auto"
+              >
+                {isGenerating ? (
+                  <span className="flex items-center justify-center">
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Generating...
+                  </span>
+                ) : (
+                  'Download PDF'
+                )}
+              </button>
+            </div>
           </div>
         </main>
 
