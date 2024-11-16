@@ -321,9 +321,9 @@ function App() {
     <div className="min-h-screen w-full bg-gradient-to-br from-primary-50 via-white to-secondary-50 
                     flex items-center justify-center font-[-apple-system,BlinkMacSystemFont,'Segoe_UI',Roboto,Oxygen,Ubuntu,Cantarell,sans-serif]
                     text-[#213547] antialiased">
-      <div className="w-[95%] md:w-[90%] max-w-6xl h-[90vh] flex flex-col justify-center">
+      <div className="w-[95%] md:w-[90%] max-w-6xl h-[90vh] flex flex-col">
         {/* Header */}
-        <header className="text-center mb-4 md:mb-8">
+        <header className="text-center mb-4 md:mb-6">
           <h1 className="text-2xl md:text-[3.2em] leading-[1.1] font-bold text-primary-900 mb-2 md:mb-3 tracking-tight">
             PDFi<span className="text-primary-600">TT</span>
           </h1>
@@ -333,7 +333,7 @@ function App() {
         </header>
 
         {/* Main Content */}
-        <main className="flex-1 flex flex-col gap-4 min-h-0 max-h-[calc(100vh-8rem)] p-2 md:p-4">
+        <main className="flex-1 flex flex-col gap-4 min-h-0 overflow-hidden">
           {/* Mobile Tabs */}
           <div className="flex lg:hidden justify-center border-b border-secondary-200 mb-2 mx-auto w-full max-w-[300px]">
             <button
@@ -370,9 +370,9 @@ function App() {
           </div>
 
           {/* Content Grid */}
-          <div className="grid lg:grid-cols-2 gap-3 md:gap-4 flex-1">
+          <div className="grid lg:grid-cols-2 gap-3 md:gap-4 flex-1 min-h-0 overflow-hidden">
             {/* Editor Panel */}
-            <div className={`bg-white rounded-lg shadow-md overflow-hidden flex flex-col min-h-[250px] lg:min-h-[450px]
+            <div className={`bg-white rounded-lg shadow-md overflow-hidden flex flex-col
                           ${!activeTab || activeTab === 'editor' ? 'block' : 'hidden lg:block'}`}>
               <div className="p-3 md:p-4 flex flex-col h-full">
                 <h2 className="text-base md:text-lg font-semibold text-secondary-900 mb-2 md:mb-3 flex items-center hidden lg:flex">
@@ -397,7 +397,7 @@ function App() {
             </div>
 
             {/* Preview Panel */}
-            <div className={`bg-white rounded-lg shadow-md overflow-hidden flex flex-col min-h-[250px] lg:min-h-[450px]
+            <div className={`bg-white rounded-lg shadow-md overflow-hidden flex flex-col
                           ${!activeTab || activeTab === 'preview' ? 'block' : 'hidden lg:block'}`}>
               <div className="p-3 md:p-4 flex flex-col h-full">
                 <h2 className="text-base md:text-lg font-semibold text-secondary-900 mb-2 md:mb-3 flex items-center hidden lg:flex">
@@ -465,7 +465,7 @@ function App() {
         </main>
 
         {/* Footer */}
-        <footer className="text-center text-secondary-500 text-xs py-2">
+        <footer className="mt-auto pt-2 pb-1 text-center text-secondary-500 text-xs">
           <p>
             Made with{' '}
             <span className="text-red-500" aria-label="love">
