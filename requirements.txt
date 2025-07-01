@@ -1,2 +1,12 @@
-markdown2==2.4.10
-pdfkit==1.0.0
+# Markdown to PDF Converter using LaTeX
+# This converter uses pandoc with LaTeX backend for superior typography
+# 
+# System dependencies required:
+# - pandoc (for Markdown processing)
+# - pdflatex (from TeX Live distribution)
+#
+# No Python packages are required for the core conversion functionality
+# as we use pandoc directly via subprocess calls.
+
+# Optional: Add packages here if you want to extend the converter
+# with additional Python-based features
