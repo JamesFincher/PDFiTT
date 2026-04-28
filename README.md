@@ -1,24 +1,30 @@
 # PDFiTT
 
-PDFiTT is a browser-based Markdown-to-PDF converter built with React, Vite, Tailwind CSS, `marked`, and `pdfmake`.
+PDFiTT is an executive-focused Markdown-to-PDF workspace built with React, Vite, Tailwind CSS, `marked`, and `pdfmake`.
 
-The app gives users a split editor/preview workflow, renders GitHub-flavored Markdown for review, and generates a downloadable PDF with styled headings, paragraphs, lists, code blocks, links, and blockquotes.
+## What changed
+
+This version overhauls the rendering pipeline so PDFs are generated from Markdown tokens (not line-by-line string parsing). The new flow gives consistent output suitable for leadership and client-facing documents.
+
+### Upgraded PDF conversion logic
+
+- Token-driven parser using `marked.lexer(...)`
+- Consistent typography, spacing, and page margins
+- Corporate-friendly color palette and footer with confidentiality/page numbers
+- Better handling for:
+  - Headings
+  - Ordered and unordered lists (including nested content)
+  - Blockquotes
+  - Code blocks + inline code
+  - Horizontal rules
+  - Markdown tables
 
 ## Features
 
 - Live Markdown preview
-- One-click PDF download
-- Responsive editor and preview tabs for smaller screens
-- Styled PDF output using built-in Helvetica, Courier, and Times fonts
-- Support for headings, lists, inline formatting, links, blockquotes, and fenced code blocks
-
-## Tech Stack
-
-- React 18
-- Vite
-- Tailwind CSS
-- marked
-- pdfmake
+- One-click executive PDF download
+- Responsive editor + preview tabs on smaller screens
+- Professional starter template for strategy briefs and reports
 
 ## Local Development
 
@@ -36,4 +42,4 @@ npm run build
 
 ## Notes
 
-PDF generation runs in the browser. No document content is sent to a backend service.
+PDF generation runs fully in-browser. No document content is sent to a backend service.

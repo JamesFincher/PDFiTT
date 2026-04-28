@@ -1,8 +1,10 @@
+import typography from '@tailwindcss/typography'
+
 /** @type {import('tailwindcss').Config} */
 export default {
   content: [
-    "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
+    './index.html',
+    './src/**/*.{js,ts,jsx,tsx}'
   ],
   theme: {
     extend: {
@@ -17,7 +19,7 @@ export default {
           600: '#0284c7',
           700: '#0369a1',
           800: '#075985',
-          900: '#0c4a6e',
+          900: '#0c4a6e'
         },
         secondary: {
           50: '#f8fafc',
@@ -29,59 +31,49 @@ export default {
           600: '#475569',
           700: '#334155',
           800: '#1e293b',
-          900: '#0f172a',
-        },
+          900: '#0f172a'
+        }
       },
       fontFamily: {
         sans: ['Inter', 'sans-serif'],
-        mono: ['Fira Code', 'monospace'],
+        mono: ['Fira Code', 'monospace']
       },
       typography: {
         DEFAULT: {
           css: {
             maxWidth: 'none',
             color: '#334155',
-            h1: {
-              color: '#0c4a6e',
-            },
-            h2: {
-              color: '#0c4a6e',
-            },
-            h3: {
-              color: '#0c4a6e',
-            },
-            h4: {
-              color: '#0c4a6e',
-            },
+            h1: { color: '#0c4a6e' },
+            h2: { color: '#0c4a6e' },
+            h3: { color: '#0c4a6e' },
+            h4: { color: '#0c4a6e' },
             a: {
               color: '#0284c7',
               '&:hover': {
-                color: '#0369a1',
-              },
+                color: '#0369a1'
+              }
             },
             pre: {
               backgroundColor: '#f8fafc',
-              color: '#334155',
+              color: '#334155'
             },
             code: {
               color: '#0c4a6e',
               '&::before': {
-                content: '""',
+                content: '""'
               },
               '&::after': {
-                content: '""',
-              },
+                content: '""'
+              }
             },
             blockquote: {
               color: '#64748b',
-              borderLeftColor: '#e2e8f0',
-            },
-          },
-        },
-      },
-    },
+              borderLeftColor: '#e2e8f0'
+            }
+          }
+        }
+      }
+    }
   },
-  plugins: [
-    require('@tailwindcss/typography'),
-  ],
+  plugins: [typography]
 }
