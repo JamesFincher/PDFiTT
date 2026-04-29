@@ -1,11 +1,11 @@
 ---
 name: pdfitt-markdown-pdf
-description: Render Markdown text or Markdown files into polished PDFs through a PDFiTT MCP server. Use when the user asks an agent in Codex, Claude Code, or another MCP-capable environment to convert Markdown content, a .md file, pasted Markdown, base64 Markdown, or a public Markdown URL into a formatted PDF.
+description: Render Markdown text or Markdown files into polished PDFs through a framework-agnostic PDFiTT MCP server. Use when the user asks an agent in Codex, Claude Code, OpenCode, or another MCP-capable environment to convert Markdown content, a .md file, pasted Markdown, base64 Markdown, or a public Markdown URL into a formatted PDF.
 ---
 
 # PDFiTT Markdown PDF
 
-Use PDFiTT when the user wants Markdown turned into a formatted PDF. Prefer the remote MCP tool when available; use the bundled script when the agent needs a deterministic command-line path.
+Use PDFiTT when the user wants Markdown turned into a formatted PDF. Prefer the remote MCP tool when available; use the bundled script when the agent needs a deterministic command-line path. The MCP server is runtime-neutral: any client that supports remote Streamable HTTP MCP can connect to it.
 
 ## Inputs
 
@@ -26,13 +26,32 @@ The deployed site exposes a stateless Streamable HTTP MCP endpoint at:
 https://pdf-i-tt.vercel.app/mcp
 ```
 
+Generic MCP clients should register a remote Streamable HTTP MCP server named `pdfitt` with this URL. No app framework, model provider, or agent runtime is required.
+
 Claude Code can add it with:
 
 ```bash
 claude mcp add --transport http pdfitt https://pdf-i-tt.vercel.app/mcp
 ```
 
-The MCP server provides one tool:
+OpenCode can add it by merging this block into `~/.config/opencode/opencode.json` or a project-level `opencode.json`:
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "pdfitt": {
+      "type": "remote",
+      "url": "https://pdf-i-tt.vercel.app/mcp",
+      "enabled": true
+    }
+  }
+}
+```
+
+The same template is included at `agents/opencode.json`.
+
+The MCP server provides these tools:
 
 ```text
 render_markdown_pdf
@@ -55,7 +74,7 @@ The tool returns JSON text with:
 
 Decode `base64` to write the PDF file.
 
-Call `get_setup_instructions` when an agent or user needs the Claude Code MCP command, Codex local skill copy command, script usage, or direct API URL. A normal GET request to `https://pdf-i-tt.vercel.app/mcp` returns the same setup payload for humans and setup scripts.
+Call `get_setup_instructions` when an agent or user needs generic MCP connection details, Claude Code setup, OpenCode setup, Codex local skill setup, script usage, or the direct API URL. A normal GET request to `https://pdf-i-tt.vercel.app/mcp` returns the same setup payload for humans and setup scripts.
 
 ## Local Skill Installation
 
@@ -66,7 +85,21 @@ mkdir -p "${CODEX_HOME:-$HOME/.codex}/skills"
 cp -R skills/pdfitt-markdown-pdf "${CODEX_HOME:-$HOME/.codex}/skills/"
 ```
 
-For other agents, copy this skill folder into the agent's supported local skill directory if the agent supports local skills. Keep `agents/openai.yaml` pointed at `https://pdf-i-tt.vercel.app/mcp`.
+For OpenCode, if local skills are enabled in your runtime, copy the folder into a global or project skills directory:
+
+```bash
+mkdir -p "$HOME/.config/opencode/skills"
+cp -R skills/pdfitt-markdown-pdf "$HOME/.config/opencode/skills/"
+```
+
+or:
+
+```bash
+mkdir -p .opencode/skills
+cp -R skills/pdfitt-markdown-pdf .opencode/skills/
+```
+
+For other agents, copy this skill folder into the agent's supported local skill directory if the agent supports local skills. Keep `agents/openai.yaml`, `agents/opencode.json`, or the equivalent dependency config pointed at `https://pdf-i-tt.vercel.app/mcp`.
 
 ## Script
 

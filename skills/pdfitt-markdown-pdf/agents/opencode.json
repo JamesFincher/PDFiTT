@@ -1,0 +1,10 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "pdfitt": {
+      "type": "remote",
+      "url": "https://pdf-i-tt.vercel.app/mcp",
+      "enabled": true
+    }
+  }
+}

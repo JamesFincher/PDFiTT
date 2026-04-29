@@ -7,15 +7,38 @@ const PUBLIC_BASE_URL = process.env.PDFITT_PUBLIC_URL || 'https://pdf-i-tt.verce
 const MCP_URL = `${PUBLIC_BASE_URL}/mcp`
 
 const setupInstructions = {
-  summary: 'PDFiTT renders Markdown into formatted PDFs through a remote MCP tool and an optional local agent skill.',
+  summary: 'PDFiTT renders Markdown into formatted PDFs through a framework-agnostic remote MCP tool and an optional local agent skill.',
   mcp: {
     url: MCP_URL,
     transport: 'streamable_http',
-    tools: ['render_markdown_pdf', 'get_setup_instructions']
+    protocolVersion: MCP_PROTOCOL_VERSION,
+    tools: ['render_markdown_pdf', 'get_setup_instructions'],
+    note: 'Any MCP client that supports remote Streamable HTTP MCP servers can connect to this URL. No app framework, model provider, or agent runtime is required.'
+  },
+  genericClient: {
+    name: 'pdfitt',
+    type: 'remote',
+    url: MCP_URL,
+    enabled: true,
+    note: 'For clients with JSON MCP config, add a remote server named pdfitt that points at this URL.'
   },
   claudeCode: {
     command: `claude mcp add --transport http pdfitt ${MCP_URL}`,
     note: 'After adding the MCP server, restart Claude Code or use /mcp to verify the connection.'
+  },
+  opencode: {
+    configFile: '~/.config/opencode/opencode.json or ./opencode.json',
+    config: {
+      $schema: 'https://opencode.ai/config.json',
+      mcp: {
+        pdfitt: {
+          type: 'remote',
+          url: MCP_URL,
+          enabled: true
+        }
+      }
+    },
+    note: 'Merge this mcp block into your OpenCode config, then restart OpenCode or run its MCP debug flow.'
   },
   codex: {
     skillInstall: 'Copy this repository folder skills/pdfitt-markdown-pdf into ${CODEX_HOME:-~/.codex}/skills/pdfitt-markdown-pdf.',
@@ -23,6 +46,12 @@ const setupInstructions = {
   },
   localSkillIfSupported: {
     folder: 'skills/pdfitt-markdown-pdf',
+    installTargets: [
+      '${CODEX_HOME:-~/.codex}/skills/pdfitt-markdown-pdf',
+      '~/.config/opencode/skills/pdfitt-markdown-pdf',
+      './.opencode/skills/pdfitt-markdown-pdf',
+      'any equivalent skills directory supported by the agent runtime'
+    ],
     script: `node skills/pdfitt-markdown-pdf/scripts/render_pdf_via_mcp.mjs --mcp-url ${MCP_URL} --markdown-file ./notes.md --out ./notes.pdf`,
     note: 'If your agent supports local skills, install the skill folder and keep the MCP dependency URL pointed at this endpoint.'
   },
@@ -37,11 +66,21 @@ const setupInstructionsText = `PDFiTT Markdown-to-PDF setup
 Remote MCP endpoint:
 ${setupInstructions.mcp.url}
 
+Generic MCP client:
+Add a remote Streamable HTTP MCP server named "pdfitt" with URL ${setupInstructions.mcp.url}.
+
 Claude Code:
 ${setupInstructions.claudeCode.command}
 
+OpenCode:
+Add this to ~/.config/opencode/opencode.json or ./opencode.json:
+${JSON.stringify(setupInstructions.opencode.config, null, 2)}
+
 Codex local skill:
 ${setupInstructions.codex.skillInstall}
+
+Other local-skill agents:
+Copy skills/pdfitt-markdown-pdf into the runtime's supported skills directory, for example ~/.config/opencode/skills/pdfitt-markdown-pdf or ./.opencode/skills/pdfitt-markdown-pdf.
 
 Local skill script:
 ${setupInstructions.localSkillIfSupported.script}
@@ -83,7 +122,7 @@ const setupTool = {
   name: 'get_setup_instructions',
   title: 'Get Setup Instructions',
   description:
-    'Return instructions for connecting to this PDFiTT MCP server and installing the optional local PDFiTT agent skill in Codex or Claude Code when local skills are supported.',
+    'Return framework-agnostic instructions for connecting to this PDFiTT MCP server from MCP clients such as Claude Code, Codex, OpenCode, or any runtime that supports remote Streamable HTTP MCP. Includes optional local skill setup where supported.',
   inputSchema: {
     type: 'object',
     properties: {},
