@@ -1,0 +1,15 @@
+interface:
+  display_name: "PDFiTT Markdown PDF"
+  short_description: "Render Markdown into polished PDFs."
+  default_prompt: "Use $pdfitt-markdown-pdf to render this Markdown as a formatted PDF."
+
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "pdfitt-markdown-pdf"
+      description: "Remote PDFiTT MCP server that renders Markdown as formatted PDFs."
+      transport: "streamable_http"
+      url: "https://pdf-i-tt.vercel.app/mcp"
+
+policy:
+  allow_implicit_invocation: true
