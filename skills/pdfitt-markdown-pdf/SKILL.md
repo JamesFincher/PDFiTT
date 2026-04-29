@@ -1,11 +1,13 @@
 ---
 name: pdfitt-markdown-pdf
-description: Render Markdown text or Markdown files into polished PDFs through a framework-agnostic PDFiTT MCP server. Use when the user asks an agent in Codex, Claude Code, OpenCode, or another MCP-capable environment to convert Markdown content, a .md file, pasted Markdown, base64 Markdown, or a public Markdown URL into a formatted PDF.
+description: Render Markdown text or Markdown files into polished PDFs through the open-source, self-hostable PDFiTT MCP server. Use when the user asks an agent in Codex, Claude Code, OpenCode, or another MCP-capable environment to convert Markdown content, a .md file, pasted Markdown, base64 Markdown, or a public Markdown URL into a formatted PDF.
 ---
 
 # PDFiTT Markdown PDF
 
 Use PDFiTT when the user wants Markdown turned into a formatted PDF. Prefer the remote MCP tool when available; use the bundled script when the agent needs a deterministic command-line path. The MCP server is runtime-neutral: any client that supports remote Streamable HTTP MCP can connect to it.
+
+PDFiTT is open source and self-hostable. If the user is deploying a fork, replace `https://pdf-i-tt.vercel.app` with their deployed origin, and set `PDFITT_PUBLIC_URL` on the deployment so returned setup instructions point at the fork.
 
 ## Inputs
 
@@ -20,7 +22,7 @@ Do not send private local paths to the remote MCP server. Remote MCP cannot read
 
 ## Remote MCP
 
-The deployed site exposes a stateless Streamable HTTP MCP endpoint at:
+The hosted site exposes a stateless Streamable HTTP MCP endpoint at:
 
 ```text
 https://pdf-i-tt.vercel.app/mcp
@@ -28,10 +30,24 @@ https://pdf-i-tt.vercel.app/mcp
 
 Generic MCP clients should register a remote Streamable HTTP MCP server named `pdfitt` with this URL. No app framework, model provider, or agent runtime is required.
 
+Self-hosted deployments expose the same path at:
+
+```text
+<origin>/mcp
+```
+
+For a self-hosted instance, use the deployed origin in all client setup commands.
+
 Claude Code can add it with:
 
 ```bash
 claude mcp add --transport http pdfitt https://pdf-i-tt.vercel.app/mcp
+```
+
+Codex can add it with:
+
+```bash
+codex mcp add pdfitt --url https://pdf-i-tt.vercel.app/mcp
 ```
 
 OpenCode can add it by merging this block into `~/.config/opencode/opencode.json` or a project-level `opencode.json`:
@@ -84,6 +100,8 @@ For Codex:
 mkdir -p "${CODEX_HOME:-$HOME/.codex}/skills"
 cp -R skills/pdfitt-markdown-pdf "${CODEX_HOME:-$HOME/.codex}/skills/"
 ```
+
+For a self-hosted deployment, pass the forked endpoint to the script with `--mcp-url <origin>/mcp` or set `PDFITT_MCP_URL=<origin>/mcp`.
 
 For OpenCode, if local skills are enabled in your runtime, copy the folder into a global or project skills directory:
 

@@ -1,7 +1,24 @@
 {
-  "name": "text-to-pdf-converter",
-  "private": true,
-  "version": "0.0.0",
+  "name": "pdfitt",
+  "version": "1.0.0",
+  "description": "Open-source Markdown-to-PDF generation MCP with a browser UI, direct API, and portable agent skill.",
+  "license": "MIT",
+  "homepage": "https://pdf-i-tt.vercel.app",
+  "keywords": [
+    "mcp",
+    "pdf",
+    "markdown",
+    "pdf-generation",
+    "self-hosted",
+    "vercel"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/JamesFincher/PDFiTT.git"
+  },
+  "bugs": {
+    "url": "https://github.com/JamesFincher/PDFiTT/issues"
+  },
   "type": "module",
   "scripts": {
     "dev": "vite",

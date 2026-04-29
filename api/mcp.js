@@ -7,13 +7,21 @@ const PUBLIC_BASE_URL = process.env.PDFITT_PUBLIC_URL || 'https://pdf-i-tt.verce
 const MCP_URL = `${PUBLIC_BASE_URL}/mcp`
 
 const setupInstructions = {
-  summary: 'PDFiTT renders Markdown into formatted PDFs through a framework-agnostic remote MCP tool and an optional local agent skill.',
+  summary: 'PDFiTT is an open-source PDF generation MCP that renders Markdown into formatted PDFs through a self-hostable remote MCP tool and optional local agent skill.',
   mcp: {
     url: MCP_URL,
     transport: 'streamable_http',
     protocolVersion: MCP_PROTOCOL_VERSION,
     tools: ['render_markdown_pdf', 'get_setup_instructions'],
     note: 'Any MCP client that supports remote Streamable HTTP MCP servers can connect to this URL. No app framework, model provider, or agent runtime is required.'
+  },
+  selfHosting: {
+    source: 'https://github.com/JamesFincher/PDFiTT',
+    license: 'MIT',
+    publicUrlEnv: 'PDFITT_PUBLIC_URL',
+    allowedOriginsEnv: 'PDFITT_ALLOWED_ORIGINS',
+    docs: ['README.md', 'llms.txt', 'AGENTS.md', 'SELF_HOSTING.md', 'docs/PDFiTT-System-Documentation.md'],
+    note: 'Fork the repository, deploy it to Vercel, set PDFITT_PUBLIC_URL to your deployed origin, and connect MCP clients to <your-origin>/mcp.'
   },
   genericClient: {
     name: 'pdfitt',
@@ -25,6 +33,10 @@ const setupInstructions = {
   claudeCode: {
     command: `claude mcp add --transport http pdfitt ${MCP_URL}`,
     note: 'After adding the MCP server, restart Claude Code or use /mcp to verify the connection.'
+  },
+  codexRemote: {
+    command: `codex mcp add pdfitt --url ${MCP_URL}`,
+    note: 'After adding the MCP server, restart Codex if your active session does not show the new tools.'
   },
   opencode: {
     configFile: '~/.config/opencode/opencode.json or ./opencode.json',
@@ -61,16 +73,25 @@ const setupInstructions = {
   }
 }
 
-const setupInstructionsText = `PDFiTT Markdown-to-PDF setup
+const setupInstructionsText = `PDFiTT open-source Markdown-to-PDF MCP setup
 
 Remote MCP endpoint:
 ${setupInstructions.mcp.url}
+
+Self-hosting:
+Fork ${setupInstructions.selfHosting.source}, deploy to Vercel, set PDFITT_PUBLIC_URL to your deployed origin, and connect clients to <your-origin>/mcp.
+
+LLM/human setup docs:
+Start with README.md, llms.txt, AGENTS.md, SELF_HOSTING.md, and docs/PDFiTT-System-Documentation.md.
 
 Generic MCP client:
 Add a remote Streamable HTTP MCP server named "pdfitt" with URL ${setupInstructions.mcp.url}.
 
 Claude Code:
 ${setupInstructions.claudeCode.command}
+
+Codex remote MCP:
+${setupInstructions.codexRemote.command}
 
 OpenCode:
 Add this to ~/.config/opencode/opencode.json or ./opencode.json:

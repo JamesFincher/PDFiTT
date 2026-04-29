@@ -1,6 +1,6 @@
 interface:
   display_name: "PDFiTT Markdown PDF"
-  short_description: "Render Markdown into polished PDFs."
+  short_description: "Render Markdown into polished PDFs with an open-source, self-hostable MCP."
   default_prompt: "Use $pdfitt-markdown-pdf to render this Markdown as a formatted PDF."
 
 dependencies:

@@ -1,0 +1,80 @@
+# PDFiTT
+
+PDFiTT is an open-source, self-hostable PDF generation MCP that renders Markdown into formatted PDFs. It includes a browser UI, direct HTTP API, remote Streamable HTTP MCP endpoint, and portable agent skill.
+
+Primary repository: https://github.com/JamesFincher/PDFiTT
+Hosted MCP endpoint: https://pdf-i-tt.vercel.app/mcp
+Hosted direct API: https://pdf-i-tt.vercel.app/api/pdf
+Hosted LLM entry point: https://pdf-i-tt.vercel.app/llms.txt
+License: MIT
+
+## LLM Quick Start
+
+If you are an AI coding agent, start here:
+
+1. Read `README.md` for project overview.
+2. Read `SELF_HOSTING.md` for install, deploy, and verification.
+3. Read `AGENTS.md` for repo-specific agent instructions.
+4. Use `npm install`, `npm run lint`, and `npm run build` for local validation.
+5. Use `codex mcp add pdfitt --url <origin>/mcp`, `claude mcp add --transport http pdfitt <origin>/mcp`, or the OpenCode JSON block in `README.md` to connect MCP clients.
+6. Use `skills/pdfitt-markdown-pdf/scripts/render_pdf_via_mcp.mjs` for deterministic render tests.
+
+## Important Files
+
+- `README.md`: human-facing overview, API examples, MCP setup, and self-host summary.
+- `SELF_HOSTING.md`: complete local setup, Vercel deploy, environment variables, validation, and customization.
+- `AGENTS.md`: instructions for LLM agents working in this repo.
+- `docs/PDFiTT-System-Documentation.md`: full system documentation source.
+- `docs/PDFiTT-System-Documentation.pdf`: generated documentation PDF.
+- `api/mcp.js`: Streamable HTTP MCP endpoint.
+- `api/pdf.js`: direct PDF API endpoint.
+- `src/lib/markdownPdf.js`: Markdown-to-pdfmake document conversion.
+- `src/lib/pdfBuffer.js`: server-side input resolution and PDF buffer rendering.
+- `skills/pdfitt-markdown-pdf/SKILL.md`: portable agent skill instructions.
+
+## Public Interfaces
+
+MCP:
+
+- Path: `/mcp`
+- Transport: `streamable_http`
+- Protocol version: `2025-06-18`
+- Tools: `render_markdown_pdf`, `get_setup_instructions`
+
+Direct API:
+
+- Path: `/api/pdf`
+- Method: `POST`
+- Inputs: `markdown`, `markdown_base64`, or `source_url`
+- Optional input: `filename`
+- Output: `application/pdf`
+
+## Self-Hosting Contract
+
+To self-host:
+
+1. Fork or clone the repository.
+2. Install dependencies with `npm install`.
+3. Run locally with `npm run dev`.
+4. Deploy to Vercel.
+5. Set `PDFITT_PUBLIC_URL` to the deployed origin, without a trailing slash.
+6. Optionally set `PDFITT_ALLOWED_ORIGINS` to a comma-separated allowlist.
+7. Verify `<origin>/mcp`, `<origin>/api/pdf`, and the browser UI.
+
+When documenting or configuring a fork, replace `https://pdf-i-tt.vercel.app` with the fork's deployed origin.
+
+## Security Notes
+
+- Do not send private local filesystem paths to the remote MCP server.
+- Read local Markdown files locally, then send Markdown content through MCP.
+- `source_url` must be public and must use `http` or `https`.
+- Raw script/style HTML is stripped from PDF conversion.
+- Browser preview HTML is sanitized with DOMPurify.
+
+## Validation Commands
+
+```bash
+npm run lint
+npm run build
+node skills/pdfitt-markdown-pdf/scripts/render_pdf_via_mcp.mjs --mcp-url https://pdf-i-tt.vercel.app/mcp --markdown-file sample.md --out /tmp/pdfitt-smoke.pdf
+```
