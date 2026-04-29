@@ -1,11 +1,17 @@
 import { useMemo, useState } from 'react'
+import DOMPurify from 'dompurify'
+import {
+  Columns2,
+  Download,
+  Eye,
+  FileText,
+  Loader2,
+  PencilLine,
+  RotateCcw,
+  ShieldCheck,
+  Trash2
+} from 'lucide-react'
 import { marked } from 'marked'
-import pdfMake from 'pdfmake/build/pdfmake'
-import * as pdfFonts from 'pdfmake/build/vfs_fonts'
-
-if (typeof window !== 'undefined') {
-  pdfMake.vfs = pdfFonts.pdfMake ? pdfFonts.pdfMake.vfs : pdfFonts.vfs
-}
 
 const STARTER_CONTENT = `# Q2 Strategy Briefing
 
@@ -34,7 +40,32 @@ Our customer base expanded by **18% QoQ**, while average contract value increase
 Mitigation includes phased rollouts, a dual-vendor observability model, and quarterly enablement refresh cycles.
 `
 
+const CLASSIFICATION_OPTIONS = ['Confidential', 'Internal Use Only', 'Board Draft', 'Public']
+
 const cleanText = (value = '') => value.replace(/\s+/g, ' ').trim()
+
+const sanitizeFileName = (value) =>
+  cleanText(value || 'executive-brief')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '')
+    .slice(0, 80) || 'executive-brief'
+
+const loadPdfMake = async () => {
+  const [{ default: pdfMake }, pdfFonts] = await Promise.all([
+    import('pdfmake/build/pdfmake'),
+    import('pdfmake/build/vfs_fonts')
+  ])
+
+  pdfMake.vfs =
+    pdfFonts.pdfMake?.vfs ||
+    pdfFonts.vfs ||
+    pdfFonts.default?.pdfMake?.vfs ||
+    pdfFonts.default?.vfs ||
+    pdfFonts.default ||
+    pdfFonts
+  return pdfMake
+}
 
 const inlineFromTokens = (tokens = []) => {
   if (!tokens.length) return ''
@@ -43,6 +74,7 @@ const inlineFromTokens = (tokens = []) => {
     switch (token.type) {
       case 'text':
       case 'escape':
+        if (token.tokens?.length) return inlineFromTokens(token.tokens)
         return { text: token.raw || token.text || '' }
       case 'strong':
         return { text: inlineFromTokens(token.tokens), bold: true }
@@ -70,13 +102,15 @@ const inlineFromTokens = (tokens = []) => {
 const tableFromToken = (token) => {
   const headerCells = token.header.map((cell) => ({
     text: cleanText(cell.text),
-    style: 'tableHeader'
+    style: 'tableHeader',
+    alignment: cell.align || 'left'
   }))
 
   const bodyRows = token.rows.map((row) =>
     row.map((cell) => ({
       text: cleanText(cell.text),
-      style: 'tableCell'
+      style: 'tableCell',
+      alignment: cell.align || 'left'
     }))
   )
 
@@ -87,9 +121,9 @@ const tableFromToken = (token) => {
       body: [headerCells, ...bodyRows]
     },
     layout: {
-      fillColor: (rowIndex) => (rowIndex === 0 ? '#edf2ff' : null),
-      hLineColor: () => '#c9d6f5',
-      vLineColor: () => '#c9d6f5',
+      fillColor: (rowIndex) => (rowIndex === 0 ? '#ecfdf5' : null),
+      hLineColor: () => '#cbd5e1',
+      vLineColor: () => '#cbd5e1',
       paddingLeft: () => 8,
       paddingRight: () => 8,
       paddingTop: () => 6,
@@ -110,21 +144,13 @@ const listFromToken = (token) => {
         } else {
           stack.push({ text: child.text, style: 'listItem' })
         }
-      } else if (child.type === 'space') {
-        return
-      } else {
+      } else if (child.type !== 'space') {
         stack.push(...blockFromTokens([child]))
       }
     })
 
-    if (stack.length === 1) {
-      return stack[0]
-    }
-
-    return {
-      stack,
-      margin: [0, 2, 0, 4]
-    }
+    if (stack.length === 1) return stack[0]
+    return { stack, margin: [0, 2, 0, 4] }
   })
 
   return {
@@ -153,9 +179,7 @@ const blockFromTokens = (tokens = []) => {
       return
     }
 
-    if (token.type === 'space') {
-      return
-    }
+    if (token.type === 'space') return
 
     if (token.type === 'list') {
       content.push(listFromToken(token))
@@ -164,11 +188,14 @@ const blockFromTokens = (tokens = []) => {
 
     if (token.type === 'blockquote') {
       content.push({
-        columns: [
-          { width: 4, canvas: [{ type: 'rect', x: 0, y: 0, w: 2, h: 36, color: '#93a4c7' }] },
-          { width: '*', stack: blockFromTokens(token.tokens), color: '#334155' }
-        ],
-        columnGap: 8,
+        table: {
+          widths: [4, '*'],
+          body: [[
+            { text: '', fillColor: '#0f766e', border: [false, false, false, false] },
+            { stack: blockFromTokens(token.tokens), border: [false, false, false, false], margin: [10, 6, 0, 0] }
+          ]]
+        },
+        layout: 'noBorders',
         margin: [0, 4, 0, 12]
       })
       return
@@ -198,7 +225,7 @@ const blockFromTokens = (tokens = []) => {
   return content
 }
 
-const buildDocDefinition = (markdown) => {
+const buildDocDefinition = (markdown, options) => {
   const tokens = marked.lexer(markdown, {
     gfm: true,
     breaks: false
@@ -206,13 +233,13 @@ const buildDocDefinition = (markdown) => {
 
   return {
     info: {
-      title: 'PDFiTT Document',
+      title: options.documentTitle,
       creator: 'PDFiTT'
     },
-    pageSize: 'LETTER',
-    pageMargins: [54, 56, 54, 56],
+    pageSize: options.pageSize,
+    pageMargins: [54, 58, 54, 58],
     defaultStyle: {
-      font: 'Helvetica',
+      font: 'Roboto',
       fontSize: 11,
       color: '#1f2937',
       lineHeight: 1.45
@@ -262,7 +289,7 @@ const buildDocDefinition = (markdown) => {
       },
       tableHeader: {
         bold: true,
-        color: '#1e293b'
+        color: '#134e4a'
       },
       tableCell: {
         color: '#334155'
@@ -270,7 +297,7 @@ const buildDocDefinition = (markdown) => {
     },
     footer: (currentPage, pageCount) => ({
       columns: [
-        { text: 'Confidential • Internal Use Only', alignment: 'left', margin: [54, 0, 0, 0] },
+        { text: `${options.classification} - ${options.documentTitle}`, alignment: 'left', margin: [54, 0, 0, 0] },
         { text: `Page ${currentPage} of ${pageCount}`, alignment: 'right', margin: [0, 0, 54, 0] }
       ],
       fontSize: 8,
@@ -279,28 +306,73 @@ const buildDocDefinition = (markdown) => {
   }
 }
 
+const getDocumentStats = (markdown) => {
+  const tokens = marked.lexer(markdown, { gfm: true })
+  const plainText = markdown
+    .replace(/```[\s\S]*?```/g, ' ')
+    .replace(/`[^`]*`/g, ' ')
+    .replace(/[#>*_[\]()`|:-]/g, ' ')
+  const words = cleanText(plainText).split(/\s+/).filter(Boolean)
+  const headings = tokens.filter((token) => token.type === 'heading')
+  const tables = tokens.filter((token) => token.type === 'table')
+  const decisionCues = markdown.match(/\b(approve|decision|decisions requested|recommendation|risk|mitigation)\b/gi) || []
+  const hasExecutiveSummary = headings.some((heading) => /executive summary/i.test(heading.text))
+
+  let readiness = 'Draft'
+  if (words.length > 80 && hasExecutiveSummary && decisionCues.length >= 3) {
+    readiness = 'Board-ready'
+  } else if (!hasExecutiveSummary) {
+    readiness = 'Needs summary'
+  } else if (decisionCues.length < 2) {
+    readiness = 'Needs decision framing'
+  }
+
+  return {
+    wordCount: words.length,
+    readMinutes: Math.max(1, Math.ceil(words.length / 200)),
+    sectionCount: headings.length,
+    tableCount: tables.length,
+    decisionCueCount: decisionCues.length,
+    readiness
+  }
+}
+
 function App() {
   const [text, setText] = useState(STARTER_CONTENT)
+  const [documentTitle, setDocumentTitle] = useState('Q2 Strategy Briefing')
+  const [fileName, setFileName] = useState('executive-brief')
+  const [classification, setClassification] = useState(CLASSIFICATION_OPTIONS[0])
+  const [pageSize, setPageSize] = useState('LETTER')
   const [isGenerating, setIsGenerating] = useState(false)
   const [activeTab, setActiveTab] = useState('editor')
 
   const preview = useMemo(
     () =>
-      marked.parse(text, {
-        gfm: true,
-        breaks: true
-      }),
+      DOMPurify.sanitize(
+        marked.parse(text, {
+          gfm: true,
+          breaks: true
+        }),
+        { USE_PROFILES: { html: true } }
+      ),
     [text]
   )
 
+  const stats = useMemo(() => getDocumentStats(text), [text])
+
   const handleDownload = async () => {
-    if (isGenerating) return
+    if (isGenerating || !cleanText(text)) return
 
     setIsGenerating(true)
 
     try {
-      const docDefinition = buildDocDefinition(text)
-      pdfMake.createPdf(docDefinition).download('executive-brief.pdf')
+      const pdfMake = await loadPdfMake()
+      const docDefinition = buildDocDefinition(text, {
+        documentTitle: cleanText(documentTitle) || 'PDFiTT Document',
+        classification,
+        pageSize
+      })
+      pdfMake.createPdf(docDefinition).download(`${sanitizeFileName(fileName || documentTitle)}.pdf`)
     } catch (error) {
       console.error('Error generating PDF:', error)
       alert('Could not generate PDF. Please review markdown syntax and retry.')
@@ -309,75 +381,180 @@ function App() {
     }
   }
 
+  const handleReset = () => {
+    setText(STARTER_CONTENT)
+    setDocumentTitle('Q2 Strategy Briefing')
+    setFileName('executive-brief')
+    setClassification(CLASSIFICATION_OPTIONS[0])
+    setPageSize('LETTER')
+  }
+
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-primary-50 via-white to-secondary-50 flex items-center justify-center font-[-apple-system,BlinkMacSystemFont,'Segoe_UI',Roboto,Oxygen,Ubuntu,Cantarell,sans-serif] text-[#213547] antialiased">
-      <div className="w-[95%] md:w-[90%] max-w-6xl h-[90vh] flex flex-col">
-        <header className="text-center mb-4 md:mb-6">
-          <h1 className="text-2xl md:text-[3.2em] leading-[1.1] font-bold text-primary-900 mb-2 md:mb-3 tracking-tight">
-            PDFi<span className="text-primary-600">TT</span>
-          </h1>
-          <p className="text-base md:text-xl text-secondary-600">Executive-grade Markdown to PDF renderer</p>
+    <div className="min-h-screen bg-[#f7f8fb] text-slate-900 antialiased">
+      <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 py-5 sm:px-6 lg:px-8">
+        <header className="flex flex-col gap-4 border-b border-slate-200 pb-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <div className="flex items-center gap-2 text-sm font-semibold text-teal-700">
+              <ShieldCheck aria-hidden="true" className="h-4 w-4" />
+              PDFiTT
+            </div>
+            <h1 className="mt-1 text-2xl font-bold leading-tight text-slate-950 sm:text-3xl">
+              Executive PDF Workspace
+            </h1>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={handleReset}
+              title="Restore sample briefing"
+              className="inline-flex h-10 items-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 shadow-sm transition hover:border-teal-600 hover:text-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:ring-offset-2"
+            >
+              <RotateCcw aria-hidden="true" className="h-4 w-4" />
+              Reset
+            </button>
+            <button
+              type="button"
+              onClick={() => setText('')}
+              title="Clear markdown"
+              className="inline-flex h-10 items-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 shadow-sm transition hover:border-rose-500 hover:text-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2"
+            >
+              <Trash2 aria-hidden="true" className="h-4 w-4" />
+              Clear
+            </button>
+            <button
+              type="button"
+              onClick={handleDownload}
+              disabled={isGenerating || !cleanText(text)}
+              title="Download PDF"
+              className="inline-flex h-10 items-center gap-2 rounded-md border border-slate-950 bg-slate-950 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isGenerating ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : <Download aria-hidden="true" className="h-4 w-4" />}
+              {isGenerating ? 'Rendering' : 'Download PDF'}
+            </button>
+          </div>
         </header>
 
-        <main className="flex-1 flex flex-col gap-4 min-h-0 overflow-hidden">
-          <div className="flex lg:hidden justify-center border-b border-secondary-200 mb-2 mx-auto w-full max-w-[300px]">
+        <section className="grid gap-3 border-b border-slate-200 py-4 lg:grid-cols-[1.2fr_1fr_0.8fr_0.8fr]">
+          <label className="block">
+            <span className="text-xs font-semibold uppercase text-slate-500">Document title</span>
+            <input
+              value={documentTitle}
+              onChange={(event) => setDocumentTitle(event.target.value)}
+              className="mt-1 h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-900 shadow-sm focus:border-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-600"
+            />
+          </label>
+          <label className="block">
+            <span className="text-xs font-semibold uppercase text-slate-500">File name</span>
+            <input
+              value={fileName}
+              onChange={(event) => setFileName(event.target.value)}
+              className="mt-1 h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-900 shadow-sm focus:border-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-600"
+            />
+          </label>
+          <label className="block">
+            <span className="text-xs font-semibold uppercase text-slate-500">Classification</span>
+            <select
+              value={classification}
+              onChange={(event) => setClassification(event.target.value)}
+              className="mt-1 h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-900 shadow-sm focus:border-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-600"
+            >
+              {CLASSIFICATION_OPTIONS.map((option) => (
+                <option key={option}>{option}</option>
+              ))}
+            </select>
+          </label>
+          <label className="block">
+            <span className="text-xs font-semibold uppercase text-slate-500">Page size</span>
+            <select
+              value={pageSize}
+              onChange={(event) => setPageSize(event.target.value)}
+              className="mt-1 h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-900 shadow-sm focus:border-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-600"
+            >
+              <option value="LETTER">Letter</option>
+              <option value="A4">A4</option>
+              <option value="LEGAL">Legal</option>
+            </select>
+          </label>
+        </section>
+
+        <section className="grid gap-2 py-4 sm:grid-cols-2 lg:grid-cols-5">
+          {[
+            ['Readiness', stats.readiness],
+            ['Words', stats.wordCount.toLocaleString()],
+            ['Read time', `${stats.readMinutes} min`],
+            ['Sections', stats.sectionCount.toLocaleString()],
+            ['Decision cues', stats.decisionCueCount.toLocaleString()]
+          ].map(([label, value]) => (
+            <div key={label} className="rounded-md border border-slate-200 bg-white px-3 py-2 shadow-sm">
+              <div className="text-xs font-semibold uppercase text-slate-500">{label}</div>
+              <div className="mt-1 truncate text-sm font-semibold text-slate-950">{value}</div>
+            </div>
+          ))}
+        </section>
+
+        <main className="flex min-h-0 flex-1 flex-col gap-3">
+          <div className="flex w-full rounded-md border border-slate-300 bg-white p-1 lg:hidden">
             <button
+              type="button"
               onClick={() => setActiveTab('editor')}
-              className={`px-8 py-2 text-sm font-medium transition-colors duration-200 ${
-                activeTab === 'editor' ? 'text-primary-600 border-b-2 border-primary-600' : 'text-secondary-600 hover:text-secondary-900'
+              className={`inline-flex h-9 flex-1 items-center justify-center gap-2 rounded px-3 text-sm font-medium ${
+                activeTab === 'editor' ? 'bg-slate-950 text-white' : 'text-slate-700 hover:bg-slate-100'
               }`}
             >
+              <PencilLine aria-hidden="true" className="h-4 w-4" />
               Write
             </button>
             <button
+              type="button"
               onClick={() => setActiveTab('preview')}
-              className={`px-8 py-2 text-sm font-medium transition-colors duration-200 ${
-                activeTab === 'preview' ? 'text-primary-600 border-b-2 border-primary-600' : 'text-secondary-600 hover:text-secondary-900'
+              className={`inline-flex h-9 flex-1 items-center justify-center gap-2 rounded px-3 text-sm font-medium ${
+                activeTab === 'preview' ? 'bg-slate-950 text-white' : 'text-slate-700 hover:bg-slate-100'
               }`}
             >
-              View
+              <Eye aria-hidden="true" className="h-4 w-4" />
+              Preview
             </button>
           </div>
 
-          <div className="grid lg:grid-cols-2 gap-3 md:gap-4 flex-1 min-h-0 overflow-hidden">
-            <div className={`bg-white rounded-lg shadow-md overflow-hidden flex flex-col ${activeTab === 'editor' ? 'block' : 'hidden lg:block'}`}>
-              <div className="p-3 md:p-4 flex flex-col h-full">
-                <h2 className="text-base md:text-lg font-semibold text-secondary-900 mb-2 md:mb-3 hidden lg:block">Markdown Source</h2>
-                <div className="flex-1 relative">
-                  <textarea
-                    value={text}
-                    onChange={(event) => setText(event.target.value)}
-                    className="absolute inset-0 w-full h-full p-2 md:p-3 bg-secondary-50/50 border border-secondary-200 rounded-md font-mono text-sm md:text-base resize-none leading-relaxed focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent placeholder:text-secondary-400"
+          <div className="grid min-h-[620px] flex-1 gap-4 lg:grid-cols-2">
+            <section className={`min-h-0 overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm ${activeTab === 'editor' ? 'block' : 'hidden lg:block'}`}>
+              <div className="flex h-full min-h-[620px] flex-col">
+                <div className="flex h-12 items-center justify-between border-b border-slate-200 px-4">
+                  <div className="inline-flex items-center gap-2 text-sm font-semibold text-slate-900">
+                    <FileText aria-hidden="true" className="h-4 w-4 text-teal-700" />
+                    Markdown Source
+                  </div>
+                  <div className="text-xs font-medium text-slate-500">{stats.tableCount} tables</div>
+                </div>
+                <textarea
+                  value={text}
+                  onChange={(event) => setText(event.target.value)}
+                  aria-label="Markdown source"
+                  spellCheck="true"
+                  className="min-h-0 flex-1 resize-none border-0 bg-slate-50 p-4 font-mono text-sm leading-6 text-slate-900 outline-none placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-teal-600"
+                  placeholder="# Executive Summary"
+                />
+              </div>
+            </section>
+
+            <section className={`min-h-0 overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm ${activeTab === 'preview' ? 'block' : 'hidden lg:block'}`}>
+              <div className="flex h-full min-h-[620px] flex-col">
+                <div className="flex h-12 items-center justify-between border-b border-slate-200 px-4">
+                  <div className="inline-flex items-center gap-2 text-sm font-semibold text-slate-900">
+                    <Columns2 aria-hidden="true" className="h-4 w-4 text-teal-700" />
+                    Executive Preview
+                  </div>
+                  <div className="text-xs font-medium text-slate-500">{classification}</div>
+                </div>
+                <div className="min-h-0 flex-1 overflow-auto bg-white p-5">
+                  <article
+                    className="prose prose-sm max-w-none prose-slate prose-headings:text-slate-950 prose-a:text-teal-700 prose-blockquote:border-teal-700 prose-code:text-teal-800"
+                    dangerouslySetInnerHTML={{ __html: preview }}
                   />
                 </div>
               </div>
-            </div>
-
-            <div className={`bg-white rounded-lg shadow-md overflow-hidden flex flex-col ${activeTab === 'preview' ? 'block' : 'hidden lg:block'}`}>
-              <div className="p-3 md:p-4 flex flex-col h-full">
-                <h2 className="text-base md:text-lg font-semibold text-secondary-900 mb-2 md:mb-3 hidden lg:block">Live Preview</h2>
-                <div className="flex-1 relative">
-                  <div className="absolute inset-0 overflow-auto bg-secondary-50/50 rounded-md border border-secondary-200 p-3">
-                    <div
-                      className="prose prose-sm md:prose max-w-none pb-16 prose-headings:text-secondary-900 prose-p:text-secondary-700 prose-a:text-[#0b4dbb]"
-                      dangerouslySetInnerHTML={{ __html: preview }}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="sticky bottom-0 left-0 right-0 py-2 bg-gradient-to-t from-white via-white to-transparent">
-            <div className="flex justify-center">
-              <button
-                onClick={handleDownload}
-                disabled={isGenerating}
-                className="px-6 py-2.5 bg-[#0f172a] text-white text-sm md:text-base font-medium rounded-md border border-transparent hover:border-[#0b4dbb] transition-all duration-200 shadow-md focus:outline-none focus:ring-2 focus:ring-[#0b4dbb] focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                {isGenerating ? 'Rendering PDF…' : 'Download Executive PDF'}
-              </button>
-            </div>
+            </section>
           </div>
         </main>
       </div>
